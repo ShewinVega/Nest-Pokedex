@@ -3,16 +3,21 @@ import {
   BadRequestException,
   InternalServerErrorException,
   NotFoundException,
+  Logger
 } from "@nestjs/common";
+import { ConfigService } from '@nestjs/config';
 import { CreatePokemonDto } from "./dto/create-pokemon.dto";
 import { UpdatePokemonDto } from "./dto/update-pokemon.dto";
 import { Pokemon } from "./entities/pokemon.entity";
 import { Model, isValidObjectId } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
+import { PaginationDto } from "src/common/dto/pagination.dto";
 
 @Injectable()
 export class PokemonService {
 
+
+  private defaultLimit: number;
 
   /**
    * The constructor function injects the Pokemon model into the class.
@@ -23,8 +28,13 @@ export class PokemonService {
    */
   constructor(
     @InjectModel(Pokemon.name)
-    private readonly pokemonModel: Model<Pokemon>
-  ) {}
+    private readonly pokemonModel: Model<Pokemon>,
+
+    private readonly configService: ConfigService,
+
+  ) {
+    this.defaultLimit = configService.get<number>('defaultLimit');
+  }
 
   /**
    * The function creates a new Pokemon in the database, converting the name to lowercase and handling
@@ -46,7 +56,6 @@ export class PokemonService {
           `Pokemon already exist in Database: ${JSON.stringify(error.keyValue)}`
         );
       }
-      console.log(error);
       throw new InternalServerErrorException(
         `Can't create Pokemon -- Check Server Logs`
       );
@@ -58,9 +67,17 @@ export class PokemonService {
    * @returns The `findAll` function is returning the data retrieved from the `pokemonModel.find({})`
    * query.
    */
-  async findAll() {
-    
-    const data = await this.pokemonModel.find({});
+  async findAll(body: PaginationDto) {
+
+    const { limit = this.defaultLimit, offset = 0 } = body;
+
+    const data = await this.pokemonModel.find()
+      .limit(limit)
+      .skip(offset)
+      .sort({
+        no: 1
+      })
+      .select('-__v');
 
     return data;
   }
