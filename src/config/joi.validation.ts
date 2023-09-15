@@ -10,7 +10,7 @@ export const JoiValidationShema = Joi.object({
     'number.base': `Port must be a number`,
     'number.positive': `Port must be positive number`
   }),
-  DEFAULT_LIMIT: Joi.number().default(3).positive().messages({
+  DEFAULT_LIMIT: Joi.number().default(7).positive().messages({
     'number.base': `Limit must be a number`,
     'number.positive': `Limit must be positive number`
   }),
